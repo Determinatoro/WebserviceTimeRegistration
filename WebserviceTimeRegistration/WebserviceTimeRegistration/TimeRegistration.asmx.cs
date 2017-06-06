@@ -125,6 +125,26 @@ namespace WebserviceTimeRegistration
             }
         }
 
+        /***********************************************************/
+        // RESET PASSWORD
+        /***********************************************************/
+        [WebMethod]
+        public void ResetPassword(int userId, string password)
+        {
+            string cmd = "UPDATE Users SET Password = '" + EncryptionHelper.Encrypt(password) +"' WHERE UserId = " + userId.ToString();
+
+            SqlConnection con = WebserviceHelper.GetDatabaseConnection();
+
+            using (con)
+            {
+                con.Open();
+                using (SqlCommand command = new SqlCommand(cmd, con))
+                    command.ExecuteNonQuery();
+            }
+
+            WebserviceHelper.WriteResponse(Context, true, "");
+        }
+
         #endregion
 
         #region USER METHODS
@@ -221,7 +241,6 @@ namespace WebserviceTimeRegistration
                 con.Open();
                 using (SqlCommand command = new SqlCommand(cmd, con))
                     command.ExecuteNonQuery();
-
             }
 
             WebserviceHelper.WriteResponse(Context, true, "");
