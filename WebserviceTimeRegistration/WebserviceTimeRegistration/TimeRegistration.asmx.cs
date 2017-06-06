@@ -7,6 +7,7 @@ using System.Web;
 using System.Web.Script.Serialization;
 using System.Web.Services;
 using WebserviceTimeRegistration.Database_objects;
+using WebserviceTimeRegistration.Webservice;
 
 namespace WebserviceTimeRegistration
 {
@@ -51,20 +52,14 @@ namespace WebserviceTimeRegistration
                 dataList.Add(reader[item].ToString());
 
             return dataList;
-        }
-
-        private void WriteResponse(object response)
-        {
-            this.Context.Response.ContentType = "application/json; charset=utf-8";
-            this.Context.Response.Write(new JavaScriptSerializer().Serialize(response));
-        }
+        }     
 
         [WebMethod]
         public void GetUser(int userId)
         {
             if (userId < 1)
             {
-                WriteResponse(GetErrorMessage(1));
+                WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(1));
                 return;
             }
 
@@ -85,26 +80,26 @@ namespace WebserviceTimeRegistration
                         {
                             var data = GetObjectData(reader);
 
-                            User user = new User(int.Parse(data[0]), data[1], data[2]);
+                            User user = new User(int.Parse(data[0]), data[1], data[2], bool.Parse(data[3]));
                             userList.Add(user);
                         }
                     }
                 }
             }
 
-            WriteResponse(userList);
+            WebserviceHelper.WriteResponse(Context, true, userList);
         }
 
         [WebMethod]
-        public void CreateUser(string firstName, string lastName)
+        public void CreateUser(string firstName, string lastName, bool admin)
         {
             if (firstName == "" || lastName == "")
             {
-                WriteResponse(GetErrorMessage(2));
+                WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(2));
                 return;
             }
 
-            string cmd = "INSERT INTO Users (FirstName, LastName) VALUES ('" + firstName + "', '" + lastName + "')";
+            string cmd = "INSERT INTO Users (FirstName, LastName, Admin) VALUES ('" + firstName + "', '" + lastName + "', '" + admin + "')";
 
             SqlConnection con = GetDatabaseConnection();
 
@@ -115,7 +110,7 @@ namespace WebserviceTimeRegistration
                     command.ExecuteNonQuery();
             }
 
-            WriteResponse("SUCCESS");
+            WebserviceHelper.WriteResponse(Context, true, "");
         }
 
         [WebMethod]
@@ -123,7 +118,7 @@ namespace WebserviceTimeRegistration
         {
             if (userId < 1)
             {
-                WriteResponse(GetErrorMessage(1));
+                WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(1));
                 return;
             }
 
@@ -138,7 +133,7 @@ namespace WebserviceTimeRegistration
                     command.ExecuteNonQuery();
             }
 
-            WriteResponse("SUCCESS");
+            WebserviceHelper.WriteResponse(Context, true, "");
         }
     }
 }

@@ -85,6 +85,7 @@
       <DependentUpon>TimeRegistration.asmx</DependentUpon>
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Webservice\WebserviceHelper.cs" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
