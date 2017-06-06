@@ -23,7 +23,7 @@ namespace WebserviceTimeRegistration
         #region FUNCTIONS
 
         /***********************************************************/
-        // GET ERROR MESSAGE
+        // GET ERROR MESSAGE - Get a specific error message
         /***********************************************************/
         private string GetErrorMessage(int id)
         {
@@ -32,16 +32,22 @@ namespace WebserviceTimeRegistration
             switch (id)
             {
                 case 1:
-                    errorMessage = "Please give an User ID";
+                    errorMessage = "Please give an user ID";
                     break;
                 case 2:
                     errorMessage = "Firstname or lastname are empty";
                     break;
                 case 3:
-                    errorMessage = "Username or lastname are empty";
+                    errorMessage = "No user with that user ID";
                     break;
                 case 4:
                     errorMessage = "Wrong username and/or password";
+                    break;
+                case 101:
+                    errorMessage = "Please give an order ID";
+                    break;
+                case 102:
+                    errorMessage = "No order with that order ID";
                     break;
             }
 
@@ -49,7 +55,7 @@ namespace WebserviceTimeRegistration
         }
 
         /***********************************************************/
-        // CREATE USERNAME
+        // CREATE USERNAME - Create unique username (Example: [Ja]kob + [Pr]echt + userId = japr8)
         /***********************************************************/
         private string CreateUsername(string firstName, string lastName)
         {
@@ -60,7 +66,7 @@ namespace WebserviceTimeRegistration
 
             string cmd = "SELECT IDENT_CURRENT('Users')";
 
-            SqlConnection con = WebserviceHelper.GetDatabaseConnection();
+            SqlConnection con = DatabaseHelper.GetDatabaseConnection();
 
             using (con)
             {
@@ -71,7 +77,7 @@ namespace WebserviceTimeRegistration
                     {
                         while (reader.Read())
                         {
-                            var data = WebserviceHelper.GetObjectData(reader);
+                            var data = DatabaseHelper.GetObjectData(reader);
 
                             int number = int.Parse(data[0]) + 1;
                             return (username + number).ToLower();
@@ -88,61 +94,75 @@ namespace WebserviceTimeRegistration
         #region LOGIN
 
         /***********************************************************/
-        // CHECK LOGIN
+        // CHECK LOGIN - Checking login for users username and password
         /***********************************************************/
         [WebMethod]
         public void CheckLogin(string username, string password)
         {
-            string cmd = "SELECT * FROM Users WHERE Username ='" + username + "' AND Password='" + EncryptionHelper.Encrypt(password) + "'";
-
-            List<User> userList = new List<User>();
-
-            SqlConnection con = WebserviceHelper.GetDatabaseConnection();
-
-            using (con)
+            try
             {
-                con.Open();
-                using (SqlCommand command = new SqlCommand(cmd, con))
+                string cmd = string.Format("SELECT * FROM Users WHERE Username ='{0}' AND Password='{1}'", username, EncryptionHelper.Encrypt(password));
+
+                List<User> userList = new List<User>();
+
+                SqlConnection con = DatabaseHelper.GetDatabaseConnection();
+
+                using (con)
                 {
-                    using (SqlDataReader reader = command.ExecuteReader())
+                    con.Open();
+                    using (SqlCommand command = new SqlCommand(cmd, con))
                     {
-                        if (!reader.HasRows)
+                        using (SqlDataReader reader = command.ExecuteReader())
                         {
-                            WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(4));
-                            return;
-                        }
+                            if (!reader.HasRows)
+                            {
+                                WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(4));
+                                return;
+                            }
 
-                        while (reader.Read())
-                        {
-                            var data = WebserviceHelper.GetObjectData(reader);
+                            while (reader.Read())
+                            {
+                                var data = DatabaseHelper.GetObjectData(reader);
 
-                            User user = new User(int.Parse(data[0]), data[1], data[2], bool.Parse(data[3]));
-                            WebserviceHelper.WriteResponse(Context, true, user);
-                            return;
+                                User user = new User(int.Parse(data[0]), data[1], data[2], bool.Parse(data[3]));
+                                WebserviceHelper.WriteResponse(Context, true, user);
+                                return;
+                            }
                         }
                     }
                 }
             }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes);
+            }
         }
 
         /***********************************************************/
-        // RESET PASSWORD
+        // RESET PASSWORD - Reset a password for a user
         /***********************************************************/
         [WebMethod]
         public void ResetPassword(int userId, string password)
         {
-            string cmd = "UPDATE Users SET Password = '" + EncryptionHelper.Encrypt(password) +"' WHERE UserId = " + userId.ToString();
-
-            SqlConnection con = WebserviceHelper.GetDatabaseConnection();
-
-            using (con)
+            try
             {
-                con.Open();
-                using (SqlCommand command = new SqlCommand(cmd, con))
-                    command.ExecuteNonQuery();
-            }
+                string cmd = string.Format("UPDATE Users SET Password='{0}' WHERE UserId='{1}'", EncryptionHelper.Encrypt(password), userId.ToString());
 
-            WebserviceHelper.WriteResponse(Context, true, "");
+                SqlConnection con = DatabaseHelper.GetDatabaseConnection();
+
+                using (con)
+                {
+                    con.Open();
+                    using (SqlCommand command = new SqlCommand(cmd, con))
+                        command.ExecuteNonQuery();
+                }
+
+                WebserviceHelper.WriteResponse(Context, true, "");
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes);
+            }
         }
 
         #endregion
@@ -150,127 +170,212 @@ namespace WebserviceTimeRegistration
         #region USER METHODS
 
         /***********************************************************/
-        // GET USER
+        // GET USER - Get a specific user from their id
         /***********************************************************/
         [WebMethod]
         public void GetUser(int userId)
         {
-            if (userId < 1)
+            try
             {
-                WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(1));
-                return;
-            }
-
-            string cmd = "SELECT * FROM Users WHERE UserId ='" + userId.ToString() + "'";
-
-            SqlConnection con = WebserviceHelper.GetDatabaseConnection();
-
-            using (con)
-            {
-                con.Open();
-                using (SqlCommand command = new SqlCommand(cmd, con))
+                if (userId < 1)
                 {
-                    using (SqlDataReader reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            var data = WebserviceHelper.GetObjectData(reader);
+                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(1));
+                    return;
+                }
 
-                            User user = new User(int.Parse(data[0]), data[1], data[2], bool.Parse(data[3]));
-                            WebserviceHelper.WriteResponse(Context, true, user);
-                            return;
+                string cmd = string.Format("SELECT * FROM Users WHERE UserId ='{0}'", userId.ToString());
+
+                SqlConnection con = DatabaseHelper.GetDatabaseConnection();
+
+                using (con)
+                {
+                    con.Open();
+                    using (SqlCommand command = new SqlCommand(cmd, con))
+                    {
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                var data = DatabaseHelper.GetObjectData(reader);
+
+                                User user = new User(int.Parse(data[0]), data[1], data[2], bool.Parse(data[3]));
+                                WebserviceHelper.WriteResponse(Context, true, user);
+                                return;
+                            }
                         }
                     }
                 }
+
+                WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(3));
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes);
             }
         }
 
         /***********************************************************/
-        // GET USER
+        // GET USERS - Get a list of all the users in the database
         /***********************************************************/
         [WebMethod]
         public void GetUsers()
         {
-            string cmd = "SELECT * FROM Users";
-
-            List<User> usersList = new List<User>();
-
-            SqlConnection con = WebserviceHelper.GetDatabaseConnection();
-
-            using (con)
+            try
             {
-                con.Open();
-                using (SqlCommand command = new SqlCommand(cmd, con))
-                {
-                    using (SqlDataReader reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            var data = WebserviceHelper.GetObjectData(reader);
+                string cmd = "SELECT * FROM Users";
 
-                            User user = new User(int.Parse(data[0]), data[1], data[2], bool.Parse(data[3]));
-                            usersList.Add(user);
+                List<User> usersList = new List<User>();
+
+                SqlConnection con = DatabaseHelper.GetDatabaseConnection();
+
+                using (con)
+                {
+                    con.Open();
+                    using (SqlCommand command = new SqlCommand(cmd, con))
+                    {
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                var data = DatabaseHelper.GetObjectData(reader);
+
+                                User user = new User(int.Parse(data[0]), data[1], data[2], bool.Parse(data[3]));
+                                usersList.Add(user);
+                            }
                         }
                     }
                 }
-            }
 
-            WebserviceHelper.WriteResponse(Context, true, usersList);
+                WebserviceHelper.WriteResponse(Context, true, usersList);
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes);
+            }
         }
 
         /***********************************************************/
-        // CREATE USER
+        // CREATE USER - Create a new user. A unique username is made together with an encrypted password
         /***********************************************************/
         [WebMethod]
         public void CreateUser(string firstName, string lastName, bool admin, string password)
         {
-            if (firstName == "" || lastName == "" || password == "")
+            try
             {
-                WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(2));
-                return;
+                if (firstName == "" || lastName == "" || password == "")
+                {
+                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(2));
+                    return;
+                }
+
+                string username = CreateUsername(firstName, lastName);
+
+                string cmd = string.Format("INSERT INTO Users (FirstName, LastName, Admin, Password, Username) VALUES ('{0}', '{1}', '{2}', '{3}', '{4}')", firstName, lastName, admin, EncryptionHelper.Encrypt(password), username);
+
+                SqlConnection con = DatabaseHelper.GetDatabaseConnection();
+
+                using (con)
+                {
+                    con.Open();
+                    using (SqlCommand command = new SqlCommand(cmd, con))
+                        command.ExecuteNonQuery();
+                }
+
+                WebserviceHelper.WriteResponse(Context, true, "");
             }
-
-            string username = CreateUsername(firstName, lastName);
-
-            string cmd = "INSERT INTO Users (FirstName, LastName, Admin, Password, Username) VALUES ('" + firstName + "', '" + lastName + "', '" + admin + "', '" + EncryptionHelper.Encrypt(password) + "', '" + username + "')";
-
-            SqlConnection con = WebserviceHelper.GetDatabaseConnection();
-
-            using (con)
+            catch (Exception mes)
             {
-                con.Open();
-                using (SqlCommand command = new SqlCommand(cmd, con))
-                    command.ExecuteNonQuery();
+                WebserviceHelper.WriteResponse(Context, false, mes);
             }
-
-            WebserviceHelper.WriteResponse(Context, true, "");
         }
 
         /***********************************************************/
-        // DELETE USER
+        // DELETE USER - Delete user with the users id
         /***********************************************************/
         [WebMethod]
         public void DeleteUser(int userId)
         {
-            if (userId < 1)
+            try
             {
-                WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(1));
-                return;
+                if (userId < 1)
+                {
+                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(1));
+                    return;
+                }
+
+                string cmd = string.Format("DELETE FROM Users WHERE UserId='{0}'", userId.ToString());
+
+                SqlConnection con = DatabaseHelper.GetDatabaseConnection();
+
+                using (con)
+                {
+                    con.Open();
+                    using (SqlCommand command = new SqlCommand(cmd, con))
+                        command.ExecuteNonQuery();
+                }
+
+                WebserviceHelper.WriteResponse(Context, true, "");
             }
-
-            string cmd = "DELETE FROM Users WHERE UserId='" + userId.ToString() + "'";
-
-            SqlConnection con = WebserviceHelper.GetDatabaseConnection();
-
-            using (con)
+            catch (Exception mes)
             {
-                con.Open();
-                using (SqlCommand command = new SqlCommand(cmd, con))
-                    command.ExecuteNonQuery();
+                WebserviceHelper.WriteResponse(Context, false, mes);
             }
-
-            WebserviceHelper.WriteResponse(Context, true, "");
         }
+
+        #endregion
+
+        #region ORDER METHODS
+
+        /***********************************************************/
+        // GET ORDER - Get a specific order from id
+        /***********************************************************/
+        [WebMethod]
+        public void GetOrder(int orderId)
+        {
+            try
+            {
+                if (orderId < 1)
+                {
+                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(101));
+                    return;
+                }
+
+                string cmd = string.Format("SELECT * FROM Orders WHERE OrderId='{0}'", orderId.ToString());
+
+                SqlConnection con = DatabaseHelper.GetDatabaseConnection();
+
+                using (con)
+                {
+                    con.Open();
+                    using (SqlCommand command = new SqlCommand(cmd, con))
+                    {
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                var data = DatabaseHelper.GetObjectData(reader);
+
+                                Order order = new Order(int.Parse(data[0]), data[1], data[2], int.Parse(data[3]));
+                                WebserviceHelper.WriteResponse(Context, true, order);
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(102));
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes);
+            }
+        }
+
+        #endregion
+
+        #region ROLE METHODS
+
+
 
         #endregion
     }

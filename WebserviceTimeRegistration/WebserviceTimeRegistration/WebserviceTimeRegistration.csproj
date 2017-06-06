@@ -79,14 +79,18 @@
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Database objects\Customer.cs" />
+    <Compile Include="Database objects\Order.cs" />
+    <Compile Include="Database objects\Role.cs" />
     <Compile Include="Database objects\User.cs" />
+    <Compile Include="Helpers\DatabaseHelper.cs" />
     <Compile Include="Helpers\EncryptionHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TimeRegistration.asmx.cs">
       <DependentUpon>TimeRegistration.asmx</DependentUpon>
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Webservice\WebserviceHelper.cs" />
+    <Compile Include="Helpers\WebserviceHelper.cs" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
