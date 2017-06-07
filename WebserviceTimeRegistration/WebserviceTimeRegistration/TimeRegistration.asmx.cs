@@ -15,7 +15,7 @@ namespace WebserviceTimeRegistration
     /// <summary>
     /// Summary description for TimeRegistration
     /// </summary>
-    [WebService(Namespace = "http://tempuri.org/")]
+    [WebService(Namespace = "http://timeregistration.test/")]
     [WebServiceBinding(ConformsTo = WsiProfiles.BasicProfile1_1)]
     [System.ComponentModel.ToolboxItem(false)]
     public class TimeRegistration : WebService
@@ -43,6 +43,12 @@ namespace WebserviceTimeRegistration
                 case 4:
                     errorMessage = "Wrong username and/or password";
                     break;
+                case 5:
+                    errorMessage = "Firstname or lastname is too short";
+                    break;
+                case 6:
+                    errorMessage = "Firstname or lastname is too short";
+                    break;
                 case 101:
                     errorMessage = "Please give an order ID";
                     break;
@@ -60,7 +66,7 @@ namespace WebserviceTimeRegistration
         private string CreateUsername(string firstName, string lastName)
         {
             if (firstName.Length < 2 || lastName.Length < 2)
-                throw new Exception("Firstname or lastname is too short");
+                throw new Exception(GetErrorMessage(5));
 
             string username = firstName.Substring(0, 2) + lastName.Substring(0, 2);
 
