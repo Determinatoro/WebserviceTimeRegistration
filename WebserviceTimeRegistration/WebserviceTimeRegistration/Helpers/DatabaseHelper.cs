@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MySql.Data.MySqlClient;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data.SqlClient;
@@ -10,6 +11,18 @@ namespace WebserviceTimeRegistration.Helpers
     public class DatabaseHelper
     {
         public static List<string> GetObjectData(SqlDataReader reader)
+        {
+            var columns = Enumerable.Range(0, reader.FieldCount).Select(reader.GetName).ToList();
+
+            List<string> dataList = new List<string>();
+
+            foreach (var item in columns)
+                dataList.Add(reader[item].ToString());
+
+            return dataList;
+        }
+
+        public static List<string> GetObjectData(MySqlDataReader reader)
         {
             var columns = Enumerable.Range(0, reader.FieldCount).Select(reader.GetName).ToList();
 
