@@ -39,5 +39,44 @@ namespace WebserviceTimeRegistration.Helpers
             string conString = ConfigurationManager.ConnectionStrings["DbConnection"].ToString();
             return new SqlConnection(conString);
         }
+
+        public static List<object> GetObjectsFromSQLReader(string cmd)
+        {
+            SqlConnection con = GetDatabaseConnection();
+
+            List<object> objectList = new List<object>();
+
+            using (con)
+            {
+                con.Open();
+                using (SqlCommand command = new SqlCommand(cmd, con))
+                {
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            var data = GetObjectData(reader);
+                            objectList.Add(data);
+                        }
+                    }
+                }
+            }
+
+            return objectList;
+        }
+
+        public static bool ExecuteCommand(string cmd)
+        {
+            SqlConnection con = GetDatabaseConnection();
+
+            using (con)
+            {
+                con.Open();
+                using (SqlCommand command = new SqlCommand(cmd, con))
+                    command.ExecuteNonQuery();
+            }
+
+            return true;
+        }
     }
 }

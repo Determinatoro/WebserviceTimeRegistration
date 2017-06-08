@@ -60,6 +60,8 @@ namespace WebserviceTimeRegistration
             return errorMessage;
         }
 
+
+
         /***********************************************************/
         // CREATE USERNAME - Create unique username (Example: [Ja]kob + [Pr]echt + userId = japr8)
         /***********************************************************/
@@ -72,27 +74,9 @@ namespace WebserviceTimeRegistration
 
             string cmd = "SELECT IDENT_CURRENT('Users')";
 
-            SqlConnection con = DatabaseHelper.GetDatabaseConnection();
-
-            using (con)
-            {
-                con.Open();
-                using (SqlCommand command = new SqlCommand(cmd, con))
-                {
-                    using (SqlDataReader reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            var data = DatabaseHelper.GetObjectData(reader);
-
-                            int number = int.Parse(data[0]) + 1;
-                            return (username + number).ToLower();
-                        }
-                    }
-                }
-            }
-
-            throw new Exception("Fail when creating username");
+            List<string> data = (List<string>)DatabaseHelper.GetObjectsFromSQLReader(cmd).FirstOrDefault();
+            int number = int.Parse(data[0]) + 1;
+            return (username + number).ToLower();            
         }
 
         #endregion
@@ -109,33 +93,14 @@ namespace WebserviceTimeRegistration
             {
                 string cmd = string.Format("SELECT * FROM Users WHERE Username ='{0}' AND Password='{1}'", username, EncryptionHelper.Encrypt(password));
 
-                List<User> userList = new List<User>();
+                List<string> data = (List<string>)DatabaseHelper.GetObjectsFromSQLReader(cmd).FirstOrDefault();
 
-                SqlConnection con = DatabaseHelper.GetDatabaseConnection();
-
-                using (con)
+                if (data == null)
+                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(4));
+                else
                 {
-                    con.Open();
-                    using (SqlCommand command = new SqlCommand(cmd, con))
-                    {
-                        using (SqlDataReader reader = command.ExecuteReader())
-                        {
-                            if (!reader.HasRows)
-                            {
-                                WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(4));
-                                return;
-                            }
-
-                            while (reader.Read())
-                            {
-                                var data = DatabaseHelper.GetObjectData(reader);
-
-                                User user = new User(int.Parse(data[0]), data[1], data[2], bool.Parse(data[3]));
-                                WebserviceHelper.WriteResponse(Context, true, user);
-                                return;
-                            }
-                        }
-                    }
+                    User user = new User(int.Parse(data[0]), data[1], data[2], bool.Parse(data[3]));
+                    WebserviceHelper.WriteResponse(Context, true, user);
                 }
             }
             catch (Exception mes)
@@ -154,16 +119,8 @@ namespace WebserviceTimeRegistration
             {
                 string cmd = string.Format("UPDATE Users SET Password='{0}' WHERE UserId='{1}'", EncryptionHelper.Encrypt(password), userId.ToString());
 
-                SqlConnection con = DatabaseHelper.GetDatabaseConnection();
-
-                using (con)
-                {
-                    con.Open();
-                    using (SqlCommand command = new SqlCommand(cmd, con))
-                        command.ExecuteNonQuery();
-                }
-
-                WebserviceHelper.WriteResponse(Context, true, "");
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
             }
             catch (Exception mes)
             {
@@ -191,28 +148,15 @@ namespace WebserviceTimeRegistration
 
                 string cmd = string.Format("SELECT * FROM Users WHERE UserId ='{0}'", userId.ToString());
 
-                SqlConnection con = DatabaseHelper.GetDatabaseConnection();
+                List<string> data = (List<string>)DatabaseHelper.GetObjectsFromSQLReader(cmd).FirstOrDefault();
 
-                using (con)
+                if (data != null)
                 {
-                    con.Open();
-                    using (SqlCommand command = new SqlCommand(cmd, con))
-                    {
-                        using (SqlDataReader reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                var data = DatabaseHelper.GetObjectData(reader);
-
-                                User user = new User(int.Parse(data[0]), data[1], data[2], bool.Parse(data[3]));
-                                WebserviceHelper.WriteResponse(Context, true, user);
-                                return;
-                            }
-                        }
-                    }
+                    User user = new User(int.Parse(data[0]), data[1], data[2], bool.Parse(data[3]));
+                    WebserviceHelper.WriteResponse(Context, true, user);
                 }
-
-                WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(3));
+                else
+                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(3));
             }
             catch (Exception mes)
             {
@@ -332,6 +276,8 @@ namespace WebserviceTimeRegistration
 
         #region ORDER METHODS
 
+
+
         /***********************************************************/
         // GET ORDER - Get a specific order from id
         /***********************************************************/
@@ -348,28 +294,15 @@ namespace WebserviceTimeRegistration
 
                 string cmd = string.Format("SELECT * FROM Orders WHERE OrderId='{0}'", orderId.ToString());
 
-                SqlConnection con = DatabaseHelper.GetDatabaseConnection();
+                List<string> data = (List<string>)DatabaseHelper.GetObjectsFromSQLReader(cmd).FirstOrDefault();
 
-                using (con)
+                if (data != null)
                 {
-                    con.Open();
-                    using (SqlCommand command = new SqlCommand(cmd, con))
-                    {
-                        using (SqlDataReader reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                var data = DatabaseHelper.GetObjectData(reader);
-
-                                Order order = new Order(int.Parse(data[0]), data[1], data[2], int.Parse(data[3]));
-                                WebserviceHelper.WriteResponse(Context, true, order);
-                                return;
-                            }
-                        }
-                    }
+                    Order order = new Order(int.Parse(data[0]), data[1], data[2], int.Parse(data[3]));
+                    WebserviceHelper.WriteResponse(Context, true, order);
                 }
-
-                WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(102));
+                else
+                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(102));
             }
             catch (Exception mes)
             {
