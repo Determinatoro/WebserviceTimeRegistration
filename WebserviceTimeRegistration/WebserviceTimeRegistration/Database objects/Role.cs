@@ -16,6 +16,11 @@ namespace WebserviceTimeRegistration.Database_objects
             this.name = name;
         }
 
+        public Role()
+        {
+
+        }
+
         public int RoleId
         {
             get

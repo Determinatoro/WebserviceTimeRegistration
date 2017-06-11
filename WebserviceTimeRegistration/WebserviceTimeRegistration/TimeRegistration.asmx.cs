@@ -75,8 +75,8 @@ namespace WebserviceTimeRegistration
 
             string cmd = "SELECT IDENT_CURRENT('Users')";
 
-            List<string> data = (List<string>)DatabaseHelper.GetObjectsFromSQLReader(cmd).FirstOrDefault();
-            int number = int.Parse(data[0]) + 1;
+            List<object> data = (List<object>)DatabaseHelper.GetObjectsFromSQLReader(cmd).FirstOrDefault();
+            int number = int.Parse(data[0].ToString()) + 1;
             return (username + number).ToLower();
         }
 
@@ -94,15 +94,12 @@ namespace WebserviceTimeRegistration
             {
                 string cmd = string.Format("SELECT * FROM Users WHERE Username ='{0}' AND Password='{1}'", username, EncryptionHelper.Encrypt(password));
 
-                List<string> data = (List<string>)DatabaseHelper.GetObjectsFromSQLReader(cmd).FirstOrDefault();
+                User user = (User)DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(User)).FirstOrDefault();
 
-                if (data == null)
+                if (user == null)
                     WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(4));
                 else
-                {
-                    User user = new User(int.Parse(data[0]), data[1], data[2], bool.Parse(data[3]));
                     WebserviceHelper.WriteResponse(Context, true, user);
-                }
             }
             catch (Exception mes)
             {
@@ -149,13 +146,10 @@ namespace WebserviceTimeRegistration
 
                 string cmd = string.Format("SELECT * FROM Users WHERE UserId ='{0}'", userId.ToString());
 
-                List<string> data = (List<string>)DatabaseHelper.GetObjectsFromSQLReader(cmd).FirstOrDefault();
+                User user = (User)DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(User)).FirstOrDefault();
 
-                if (data != null)
-                {
-                    User user = new User(int.Parse(data[0]), data[1], data[2], bool.Parse(data[3]));
+                if (user != null)
                     WebserviceHelper.WriteResponse(Context, true, user);
-                }
                 else
                     WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(3));
             }
@@ -177,13 +171,10 @@ namespace WebserviceTimeRegistration
 
                 List<User> usersList = new List<User>();
 
-                var list = DatabaseHelper.GetObjectsFromSQLReader(cmd);
+                var objectList = DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(User));
 
-                foreach (List<string> data in list)
-                {
-                    User user = new User(int.Parse(data[0]), data[1], data[2], bool.Parse(data[3]));
-                    usersList.Add(user);
-                }
+                foreach (User obj in objectList)
+                    usersList.Add(obj);
 
                 WebserviceHelper.WriteResponse(Context, true, usersList);
             }
@@ -263,13 +254,10 @@ namespace WebserviceTimeRegistration
 
                 List<Order> ordersList = new List<Order>();
 
-                var list = DatabaseHelper.GetObjectsFromSQLReader(cmd);
+                var objectList = DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(Order));
 
-                foreach (List<string> data in list)
-                {
-                    Order order = new Order(int.Parse(data[0]), data[1], data[2], data[3], data[4]);
-                    ordersList.Add(order);
-                }
+                foreach (Order obj in objectList)
+                    ordersList.Add(obj);
 
                 WebserviceHelper.WriteResponse(Context, true, ordersList);
             }
@@ -292,13 +280,10 @@ namespace WebserviceTimeRegistration
                 cmd.Parameters.Add("@UserId", SqlDbType.Int).Value = userId;
                 cmd.Parameters.Add("@OrderId", SqlDbType.Int).Value = orderId;
 
-                List<string> data = (List<string>)DatabaseHelper.GetObjectsFromSQLReader(cmd).FirstOrDefault();
+                Order order = (Order)DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(Order)).FirstOrDefault();
 
-                if (data != null)
-                {
-                    Order order = new Order(int.Parse(data[0]), data[1], data[2], data[3], data[4]);
+                if (order != null)
                     WebserviceHelper.WriteResponse(Context, true, order);
-                }
                 else
                     WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(102));
             }
@@ -366,13 +351,10 @@ namespace WebserviceTimeRegistration
 
                 List<Role> rolesList = new List<Role>();
 
-                var list = DatabaseHelper.GetObjectsFromSQLReader(cmd);
+                var objectList = DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(Role));
 
-                foreach (List<string> data in list)
-                {
-                    Role role = new Role(int.Parse(data[0]), data[1]);
-                    rolesList.Add(role);
-                }
+                foreach (Role obj in objectList)
+                    rolesList.Add(obj);
 
                 WebserviceHelper.WriteResponse(Context, true, rolesList);
             }
@@ -416,6 +398,41 @@ namespace WebserviceTimeRegistration
                 WebserviceHelper.WriteResponse(Context, false, mes);
             }
         }
+
+         [WebMethod]
+         public void GetOrderRoles(int orderId)
+         {
+             try
+             {
+                 SqlCommand cmd = new SqlCommand("GetOrderRoles");
+                 cmd.CommandType = CommandType.StoredProcedure;
+                 cmd.Parameters.Add("@OrderId", SqlDbType.Int).Value = orderId;
+
+                 List<OrderRole> orderRolesList = new List<OrderRole>();
+
+                 var objectList = DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(OrderRole));
+
+                 foreach (OrderRole obj in objectList)
+                    orderRolesList.Add(obj);
+
+                 WebserviceHelper.WriteResponse(Context, true, orderRolesList);
+             }
+             catch (Exception mes)
+             {
+                 WebserviceHelper.WriteResponse(Context, false, mes);
+             }
+         }
+
+        #endregion
+
+        #region CUSTOMER METHODS
+
+
+        #endregion
+
+        #region TIME REGISTRATION METHODS
+
+
 
         #endregion
     }

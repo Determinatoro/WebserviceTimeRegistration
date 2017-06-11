@@ -85,6 +85,7 @@
   <ItemGroup>
     <Compile Include="Database objects\Customer.cs" />
     <Compile Include="Database objects\Order.cs" />
+    <Compile Include="Database objects\OrderRole.cs" />
     <Compile Include="Database objects\Role.cs" />
     <Compile Include="Database objects\User.cs" />
     <Compile Include="Helpers\DatabaseHelper.cs" />

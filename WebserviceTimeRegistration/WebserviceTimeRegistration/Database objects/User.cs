@@ -20,6 +20,11 @@ namespace WebserviceTimeRegistration.Database_objects
             this.Admin = admin;
         }
 
+        public User()
+        {
+
+        }
+
         public int UserId
         {
             get

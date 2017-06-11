@@ -5,24 +5,30 @@ using System.Web;
 
 namespace WebserviceTimeRegistration.Database_objects
 {
-    public class Order
+    public class OrderRole
     {
         private int orderId;
         private string orderName;
         private string description;
-        private string customerName;
+        private int userId;
+        private string firstName;
+        private string lastName;
+        private int roleId;
         private string roleName;
 
-        public Order(int orderId, string orderName, string description, string customerName, string roleName)
+        public OrderRole(int orderId, string orderName, string description, int userId, string firstName, string lastName, int roleId, string roleName)
         {
             this.orderId = orderId;
             this.orderName = orderName;
             this.description = description;
-            this.customerName = customerName;
+            this.userId = userId;
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.roleId = roleId;
             this.roleName = roleName;
         }
 
-        public Order()
+        public OrderRole()
         {
 
         }
@@ -66,16 +72,55 @@ namespace WebserviceTimeRegistration.Database_objects
             }
         }
 
-        public string CustomerName
+        public int UserId
         {
             get
             {
-                return customerName;
+                return userId;
             }
 
             set
             {
-                customerName = value;
+                userId = value;
+            }
+        }
+
+        public string FirstName
+        {
+            get
+            {
+                return firstName;
+            }
+
+            set
+            {
+                firstName = value;
+            }
+        }
+
+        public string LastName
+        {
+            get
+            {
+                return lastName;
+            }
+
+            set
+            {
+                lastName = value;
+            }
+        }
+
+        public int RoleId
+        {
+            get
+            {
+                return roleId;
+            }
+
+            set
+            {
+                roleId = value;
             }
         }
 
