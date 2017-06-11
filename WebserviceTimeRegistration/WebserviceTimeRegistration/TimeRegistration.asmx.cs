@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Web;
@@ -76,7 +77,7 @@ namespace WebserviceTimeRegistration
 
             List<string> data = (List<string>)DatabaseHelper.GetObjectsFromSQLReader(cmd).FirstOrDefault();
             int number = int.Parse(data[0]) + 1;
-            return (username + number).ToLower();            
+            return (username + number).ToLower();
         }
 
         #endregion
@@ -176,24 +177,12 @@ namespace WebserviceTimeRegistration
 
                 List<User> usersList = new List<User>();
 
-                SqlConnection con = DatabaseHelper.GetDatabaseConnection();
+                var list = DatabaseHelper.GetObjectsFromSQLReader(cmd);
 
-                using (con)
+                foreach (List<string> data in list)
                 {
-                    con.Open();
-                    using (SqlCommand command = new SqlCommand(cmd, con))
-                    {
-                        using (SqlDataReader reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                var data = DatabaseHelper.GetObjectData(reader);
-
-                                User user = new User(int.Parse(data[0]), data[1], data[2], bool.Parse(data[3]));
-                                usersList.Add(user);
-                            }
-                        }
-                    }
+                    User user = new User(int.Parse(data[0]), data[1], data[2], bool.Parse(data[3]));
+                    usersList.Add(user);
                 }
 
                 WebserviceHelper.WriteResponse(Context, true, usersList);
@@ -222,16 +211,8 @@ namespace WebserviceTimeRegistration
 
                 string cmd = string.Format("INSERT INTO Users (FirstName, LastName, Admin, Password, Username) VALUES ('{0}', '{1}', '{2}', '{3}', '{4}')", firstName, lastName, admin, EncryptionHelper.Encrypt(password), username);
 
-                SqlConnection con = DatabaseHelper.GetDatabaseConnection();
-
-                using (con)
-                {
-                    con.Open();
-                    using (SqlCommand command = new SqlCommand(cmd, con))
-                        command.ExecuteNonQuery();
-                }
-
-                WebserviceHelper.WriteResponse(Context, true, "");
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
             }
             catch (Exception mes)
             {
@@ -255,16 +236,8 @@ namespace WebserviceTimeRegistration
 
                 string cmd = string.Format("DELETE FROM Users WHERE UserId='{0}'", userId.ToString());
 
-                SqlConnection con = DatabaseHelper.GetDatabaseConnection();
-
-                using (con)
-                {
-                    con.Open();
-                    using (SqlCommand command = new SqlCommand(cmd, con))
-                        command.ExecuteNonQuery();
-                }
-
-                WebserviceHelper.WriteResponse(Context, true, "");
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
             }
             catch (Exception mes)
             {
@@ -276,29 +249,54 @@ namespace WebserviceTimeRegistration
 
         #region ORDER METHODS
 
-
-
         /***********************************************************/
-        // GET ORDER - Get a specific order from id
+        // GET ORDERS - Get a list of all the orders associated with the user
         /***********************************************************/
         [WebMethod]
-        public void GetOrder(int orderId)
+        public void GetOrders(int userId)
         {
             try
             {
-                if (orderId < 1)
+                SqlCommand cmd = new SqlCommand("GetOrders");
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@UserId", SqlDbType.Int).Value = userId;
+
+                List<Order> ordersList = new List<Order>();
+
+                var list = DatabaseHelper.GetObjectsFromSQLReader(cmd);
+
+                foreach (List<string> data in list)
                 {
-                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(101));
-                    return;
+                    Order order = new Order(int.Parse(data[0]), data[1], data[2], data[3], data[4]);
+                    ordersList.Add(order);
                 }
 
-                string cmd = string.Format("SELECT * FROM Orders WHERE OrderId='{0}'", orderId.ToString());
+                WebserviceHelper.WriteResponse(Context, true, ordersList);
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes);
+            }
+        }
+
+        /***********************************************************/
+        // GET ORDER - Get a specific order associated with the user
+        /***********************************************************/
+        [WebMethod]
+        public void GetOrder(int userId, int orderId)
+        {
+            try
+            {
+                SqlCommand cmd = new SqlCommand("GetOrder");
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@UserId", SqlDbType.Int).Value = userId;
+                cmd.Parameters.Add("@OrderId", SqlDbType.Int).Value = orderId;
 
                 List<string> data = (List<string>)DatabaseHelper.GetObjectsFromSQLReader(cmd).FirstOrDefault();
 
                 if (data != null)
                 {
-                    Order order = new Order(int.Parse(data[0]), data[1], data[2], int.Parse(data[3]));
+                    Order order = new Order(int.Parse(data[0]), data[1], data[2], data[3], data[4]);
                     WebserviceHelper.WriteResponse(Context, true, order);
                 }
                 else
@@ -310,11 +308,114 @@ namespace WebserviceTimeRegistration
             }
         }
 
+        /***********************************************************/
+        // CREATE ORDER - Create an order where user is given the role Creator
+        /***********************************************************/
+        [WebMethod]
+        public void CreateOrder(int userId, string name, string description, int customerId)
+        {
+            try
+            {
+                SqlCommand cmd = new SqlCommand("CreateOrder");
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@UserId", SqlDbType.Int).Value = userId;
+                cmd.Parameters.Add("@Name", SqlDbType.NVarChar).Value = name;
+                cmd.Parameters.Add("@Description", SqlDbType.NVarChar).Value = description;
+                cmd.Parameters.Add("@CustomerId", SqlDbType.Int).Value = customerId;
+
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes);
+            }
+        }
+
+        /***********************************************************/
+        // DELETE ORDER - Delete order and all the OrderRoles associated with it
+        /***********************************************************/
+        [WebMethod]
+        public void DeleteOrder(int orderId)
+        {
+            try
+            {
+                SqlCommand cmd = new SqlCommand("DeleteOrder");
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@OrderId", SqlDbType.Int).Value = orderId;
+
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes);
+            }
+        }
+
         #endregion
 
         #region ROLE METHODS
 
+        [WebMethod]
+        public void GetRoles()
+        {
+            try
+            {
+                string cmd = "SELECT * FROM Roles";
 
+                List<Role> rolesList = new List<Role>();
+
+                var list = DatabaseHelper.GetObjectsFromSQLReader(cmd);
+
+                foreach (List<string> data in list)
+                {
+                    Role role = new Role(int.Parse(data[0]), data[1]);
+                    rolesList.Add(role);
+                }
+
+                WebserviceHelper.WriteResponse(Context, true, rolesList);
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes);
+            }
+        }
+
+        [WebMethod]
+        public void CreateRole(string name)
+        {
+            try
+            {
+                string cmd = string.Format("INSERT INTO Roles (Name) VALUES ('{0}')", name);
+
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes);
+            }
+        }
+
+        [WebMethod]
+        public void DeleteRole(int roleId)
+        {
+            try
+            {
+                if (roleId <= 1)
+                    return;
+
+                string cmd = string.Format("DELETE FROM Roles WHERE RoleId = {0}", roleId);
+
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes);
+            }
+        }
 
         #endregion
     }

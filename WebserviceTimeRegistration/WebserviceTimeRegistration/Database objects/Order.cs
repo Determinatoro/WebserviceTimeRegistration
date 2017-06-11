@@ -8,16 +8,18 @@ namespace WebserviceTimeRegistration.Database_objects
     public class Order
     {
         private int orderId;
-        private string name;
+        private string orderName;
         private string description;
-        private int customerId;
+        private string customerName;
+        private string roleName;
 
-        public Order(int orderId, string name, string description, int customerId)
+        public Order(int orderId, string orderName, string description, string customerName, string roleName)
         {
             this.orderId = orderId;
-            this.name = name;
+            this.orderName = orderName;
             this.description = description;
-            this.customerId = customerId;
+            this.customerName = customerName;
+            this.roleName = roleName;
         }
 
         public int OrderId
@@ -33,16 +35,16 @@ namespace WebserviceTimeRegistration.Database_objects
             }
         }
 
-        public string Name
+        public string OrderName
         {
             get
             {
-                return name;
+                return orderName;
             }
 
             set
             {
-                name = value;
+                orderName = value;
             }
         }
 
@@ -59,16 +61,29 @@ namespace WebserviceTimeRegistration.Database_objects
             }
         }
 
-        public int CustomerId
+        public string CustomerName
         {
             get
             {
-                return customerId;
+                return customerName;
             }
 
             set
             {
-                customerId = value;
+                customerName = value;
+            }
+        }
+
+        public string RoleName
+        {
+            get
+            {
+                return roleName;
+            }
+
+            set
+            {
+                roleName = value;
             }
         }
     }
