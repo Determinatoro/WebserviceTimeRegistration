@@ -80,6 +80,15 @@ namespace WebserviceTimeRegistration
             return (username + number).ToLower();
         }
 
+        private string CreateUsername(string firstName, string lastName, int userId)
+        {
+            if (firstName.Length < 2 || lastName.Length < 2)
+                throw new Exception(GetErrorMessage(5));
+
+            string username = firstName.Substring(0, 2) + lastName.Substring(0, 2);
+            return (username + userId.ToString()).ToLower();
+        }
+
         #endregion
 
         #region LOGIN
@@ -152,6 +161,27 @@ namespace WebserviceTimeRegistration
                     WebserviceHelper.WriteResponse(Context, true, user);
                 else
                     WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(3));
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes);
+            }
+        }
+
+        /***********************************************************/
+        // UPDATE USER - Get a list of all the users in the database
+        /***********************************************************/
+        [WebMethod]
+        public void UpdateUser(int userId, string firstName, string lastName, bool admin)
+        {
+            try
+            {
+                string username = CreateUsername(firstName, lastName, userId);
+
+                string cmd = string.Format("UPDATE Users SET FirstName='{0}', LastName='{1}', Username='{2}', Admin='{3}' WHERE UserId={4}", firstName, lastName, username, admin, userId);
+
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
             }
             catch (Exception mes)
             {
@@ -342,6 +372,9 @@ namespace WebserviceTimeRegistration
 
         #region ROLE METHODS
 
+        /***********************************************************/
+        // GET ROLES - Get all roles
+        /***********************************************************/
         [WebMethod]
         public void GetRoles()
         {
@@ -364,6 +397,9 @@ namespace WebserviceTimeRegistration
             }
         }
 
+        /***********************************************************/
+        // CREATE ROLE - Create a role with a name
+        /***********************************************************/
         [WebMethod]
         public void CreateRole(string name)
         {
@@ -380,6 +416,9 @@ namespace WebserviceTimeRegistration
             }
         }
 
+        /***********************************************************/
+        // DELETE ROLE - Deletes all OrderRoles associated with this roleId and then deletes the role
+        /***********************************************************/
         [WebMethod]
         public void DeleteRole(int roleId)
         {
@@ -388,7 +427,9 @@ namespace WebserviceTimeRegistration
                 if (roleId <= 1)
                     return;
 
-                string cmd = string.Format("DELETE FROM Roles WHERE RoleId = {0}", roleId);
+                SqlCommand cmd = new SqlCommand("DeleteRole");
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@RoleId", SqlDbType.Int).Value = roleId;
 
                 if (DatabaseHelper.ExecuteCommand(cmd))
                     WebserviceHelper.WriteResponse(Context, true, "");
@@ -399,33 +440,63 @@ namespace WebserviceTimeRegistration
             }
         }
 
-         [WebMethod]
-         public void GetOrderRoles(int orderId)
-         {
-             try
-             {
-                 SqlCommand cmd = new SqlCommand("GetOrderRoles");
-                 cmd.CommandType = CommandType.StoredProcedure;
-                 cmd.Parameters.Add("@OrderId", SqlDbType.Int).Value = orderId;
+        #endregion
 
-                 List<OrderRole> orderRolesList = new List<OrderRole>();
+        #region ORDER ROLES METHOD
 
-                 var objectList = DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(OrderRole));
+        /***********************************************************/
+        // GET ORDER ROLES - Gets all Order roles associated with an order
+        /***********************************************************/
+        [WebMethod]
+        public void GetOrderRoles(int orderId)
+        {
+            try
+            {
+                SqlCommand cmd = new SqlCommand("GetOrderRoles");
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@OrderId", SqlDbType.Int).Value = orderId;
 
-                 foreach (OrderRole obj in objectList)
+                List<OrderRole> orderRolesList = new List<OrderRole>();
+
+                var objectList = DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(OrderRole));
+
+                foreach (OrderRole obj in objectList)
                     orderRolesList.Add(obj);
 
-                 WebserviceHelper.WriteResponse(Context, true, orderRolesList);
-             }
-             catch (Exception mes)
-             {
-                 WebserviceHelper.WriteResponse(Context, false, mes);
-             }
-         }
+                WebserviceHelper.WriteResponse(Context, true, orderRolesList);
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes);
+            }
+        }
 
         #endregion
 
         #region CUSTOMER METHODS
+
+        [WebMethod]
+        public void GetCustomers()
+        {
+            try
+            {
+                string cmd = "SELECT * FROM Customers";
+
+                List<Customer> list = new List<Customer>();
+
+                var objectList = DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(Customer));
+
+                foreach (Customer obj in objectList)
+                    list.Add(obj);
+
+                WebserviceHelper.WriteResponse(Context, true, list);
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes);
+            }
+        }
+
 
 
         #endregion

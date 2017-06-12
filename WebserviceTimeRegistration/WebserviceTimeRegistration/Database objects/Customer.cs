@@ -16,6 +16,11 @@ namespace WebserviceTimeRegistration.Database_objects
             this.name = name;
         }
 
+        public Customer()
+        {
+
+        }
+
         public int CustomerId
         {
             get
