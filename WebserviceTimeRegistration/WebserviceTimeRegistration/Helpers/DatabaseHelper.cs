@@ -25,6 +25,9 @@ namespace WebserviceTimeRegistration.Helpers
                 if (value is Dictionary<string, object>)
                     value = GetObject((Dictionary<string, object>)value, prop.PropertyType);
 
+                if (value is DBNull)
+                    value = value.ToString();
+
                 prop.SetValue(obj, value, null);
             }
             return obj;

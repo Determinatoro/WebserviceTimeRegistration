@@ -112,7 +112,7 @@ namespace WebserviceTimeRegistration
             }
             catch (Exception mes)
             {
-                WebserviceHelper.WriteResponse(Context, false, mes);
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
             }
         }
 
@@ -131,7 +131,7 @@ namespace WebserviceTimeRegistration
             }
             catch (Exception mes)
             {
-                WebserviceHelper.WriteResponse(Context, false, mes);
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
             }
         }
 
@@ -164,7 +164,7 @@ namespace WebserviceTimeRegistration
             }
             catch (Exception mes)
             {
-                WebserviceHelper.WriteResponse(Context, false, mes);
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
             }
         }
 
@@ -185,7 +185,7 @@ namespace WebserviceTimeRegistration
             }
             catch (Exception mes)
             {
-                WebserviceHelper.WriteResponse(Context, false, mes);
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
             }
         }
 
@@ -210,7 +210,7 @@ namespace WebserviceTimeRegistration
             }
             catch (Exception mes)
             {
-                WebserviceHelper.WriteResponse(Context, false, mes);
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
             }
         }
 
@@ -237,7 +237,7 @@ namespace WebserviceTimeRegistration
             }
             catch (Exception mes)
             {
-                WebserviceHelper.WriteResponse(Context, false, mes);
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
             }
         }
 
@@ -262,7 +262,7 @@ namespace WebserviceTimeRegistration
             }
             catch (Exception mes)
             {
-                WebserviceHelper.WriteResponse(Context, false, mes);
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
             }
         }
 
@@ -293,7 +293,7 @@ namespace WebserviceTimeRegistration
             }
             catch (Exception mes)
             {
-                WebserviceHelper.WriteResponse(Context, false, mes);
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
             }
         }
 
@@ -319,7 +319,7 @@ namespace WebserviceTimeRegistration
             }
             catch (Exception mes)
             {
-                WebserviceHelper.WriteResponse(Context, false, mes);
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
             }
         }
 
@@ -343,7 +343,7 @@ namespace WebserviceTimeRegistration
             }
             catch (Exception mes)
             {
-                WebserviceHelper.WriteResponse(Context, false, mes);
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
             }
         }
 
@@ -364,7 +364,7 @@ namespace WebserviceTimeRegistration
             }
             catch (Exception mes)
             {
-                WebserviceHelper.WriteResponse(Context, false, mes);
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
             }
         }
 
@@ -393,7 +393,7 @@ namespace WebserviceTimeRegistration
             }
             catch (Exception mes)
             {
-                WebserviceHelper.WriteResponse(Context, false, mes);
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
             }
         }
 
@@ -412,7 +412,7 @@ namespace WebserviceTimeRegistration
             }
             catch (Exception mes)
             {
-                WebserviceHelper.WriteResponse(Context, false, mes);
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
             }
         }
 
@@ -436,7 +436,7 @@ namespace WebserviceTimeRegistration
             }
             catch (Exception mes)
             {
-                WebserviceHelper.WriteResponse(Context, false, mes);
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
             }
         }
 
@@ -467,7 +467,64 @@ namespace WebserviceTimeRegistration
             }
             catch (Exception mes)
             {
-                WebserviceHelper.WriteResponse(Context, false, mes);
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
+            }
+        }
+
+        /***********************************************************/
+        // CREATE ORDER ROLE - OrderId, UserId, RoleId
+        /***********************************************************/
+        [WebMethod]
+        public void CreateOrderRole(int orderId, int userId, int roleId)
+        {
+            try
+            {
+                string cmd = string.Format("INSERT INTO OrderRoles (OrderId, UserId, RoleId) VALUES ({0}, {1}, {2})", orderId, userId, roleId);
+
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
+            }
+        }
+
+        /***********************************************************/
+        // UPDATE ORDER ROLE - OrderId, UserId, RoleId
+        /***********************************************************/
+        [WebMethod]
+        public void UpdateOrderRole(int orderId, int userId, int roleId)
+        {
+            try
+            {
+                string cmd = string.Format("UPDATE OrderRoles SET RoleId={2} WHERE OrderId={0} AND UserId={1}", orderId, userId, roleId);
+
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
+            }
+        }
+
+        /***********************************************************/
+        // DELETE ORDER ROLE - OrderId, UserId, RoleId
+        /***********************************************************/
+        [WebMethod]
+        public void DeleteOrderRole(int orderRoleId)
+        {
+            try
+            {
+                string cmd = string.Format("DELETE FROM OrderRoles WHERE OrderRoleId={0}", orderRoleId);
+
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
             }
         }
 
@@ -475,6 +532,9 @@ namespace WebserviceTimeRegistration
 
         #region CUSTOMER METHODS
 
+        /***********************************************************/
+        // GET CUSTOMERS - Get customers 
+        /***********************************************************/
         [WebMethod]
         public void GetCustomers()
         {
@@ -493,17 +553,78 @@ namespace WebserviceTimeRegistration
             }
             catch (Exception mes)
             {
-                WebserviceHelper.WriteResponse(Context, false, mes);
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
             }
         }
 
+        /***********************************************************/
+        // CREATE CUSTOMER - Name of the customer
+        /***********************************************************/
+        [WebMethod]
+        public void CreateCustomer(string name)
+        {
+            try
+            {
+                string cmd = string.Format("INSERT INTO Customers (Name) VALUES ('{0}')", name);
 
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
+            }
+        }
+
+        /***********************************************************/
+        // DELETE CUSTOMER - Delete
+        /***********************************************************/
+        [WebMethod]
+        public void DeleteCustomer(int customerId)
+        {
+            try
+            {
+                string cmd = string.Format("DELETE FROM Customers WHERE CustomerId={0}", customerId.ToString());
+
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
+            }
+        }
 
         #endregion
 
         #region TIME REGISTRATION METHODS
 
+        /***********************************************************/
+        // GET TIME REGISTRATIONS - UserId
+        /***********************************************************/
+        [WebMethod]
+        public void GetTimeRegistrations(int userId)
+        {
+            try
+            {
+                SqlCommand cmd = new SqlCommand("GetTimeRegistrations");
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@UserId", SqlDbType.Int).Value = userId;
 
+                List<Database_objects.TimeRegistration> list = new List<Database_objects.TimeRegistration>();
+
+                var objectList = DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(Database_objects.TimeRegistration));
+
+                foreach (Database_objects.TimeRegistration obj in objectList)
+                    list.Add(obj);
+
+                WebserviceHelper.WriteResponse(Context, true, list);
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
+            }
+        }
 
         #endregion
     }

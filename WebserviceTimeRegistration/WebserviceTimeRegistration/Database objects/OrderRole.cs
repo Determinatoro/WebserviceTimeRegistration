@@ -7,6 +7,7 @@ namespace WebserviceTimeRegistration.Database_objects
 {
     public class OrderRole
     {
+        private int orderRoleId;
         private int orderId;
         private string orderName;
         private string description;
@@ -31,6 +32,19 @@ namespace WebserviceTimeRegistration.Database_objects
         public OrderRole()
         {
 
+        }
+
+        public int OrderRoleId
+        {
+            get
+            {
+                return orderRoleId;
+            }
+
+            set
+            {
+                orderRoleId = value;
+            }
         }
 
         public int OrderId
