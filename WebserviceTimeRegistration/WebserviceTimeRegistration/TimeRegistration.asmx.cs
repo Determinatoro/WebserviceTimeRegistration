@@ -31,37 +31,29 @@ namespace WebserviceTimeRegistration
             string errorMessage = "Error";
 
             switch (id)
-            {
+            {                
                 case 1:
-                    errorMessage = "Please give an user ID";
+                    errorMessage = "Firstname, lastname or password are empty";
                     break;
                 case 2:
-                    errorMessage = "Firstname or lastname are empty";
-                    break;
-                case 3:
                     errorMessage = "No user with that user ID";
                     break;
-                case 4:
+                case 3:
                     errorMessage = "Wrong username and/or password";
+                    break;
+                case 4:
+                    errorMessage = "Firstname or lastname is too short";
                     break;
                 case 5:
                     errorMessage = "Firstname or lastname is too short";
-                    break;
-                case 6:
-                    errorMessage = "Firstname or lastname is too short";
-                    break;
+                    break;                
                 case 101:
-                    errorMessage = "Please give an order ID";
-                    break;
-                case 102:
                     errorMessage = "No order with that order ID";
                     break;
             }
 
             return errorMessage;
         }
-
-
 
         /***********************************************************/
         // CREATE USERNAME - Create unique username (Example: [Ja]kob + [Pr]echt + userId = japr8)
@@ -80,21 +72,12 @@ namespace WebserviceTimeRegistration
             return (username + number).ToLower();
         }
 
-        private string CreateUsername(string firstName, string lastName, int userId)
-        {
-            if (firstName.Length < 2 || lastName.Length < 2)
-                throw new Exception(GetErrorMessage(5));
-
-            string username = firstName.Substring(0, 2) + lastName.Substring(0, 2);
-            return (username + userId.ToString()).ToLower();
-        }
-
         #endregion
 
         #region LOGIN
 
         /***********************************************************/
-        // CHECK LOGIN - Checking login for users username and password
+        // CHECK LOGIN - Check login for user - Returns success[true; false], User
         /***********************************************************/
         [WebMethod]
         public void CheckLogin(string username, string password)
@@ -102,58 +85,6 @@ namespace WebserviceTimeRegistration
             try
             {
                 string cmd = string.Format("SELECT * FROM Users WHERE Username ='{0}' AND Password='{1}'", username, EncryptionHelper.Encrypt(password));
-
-                User user = (User)DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(User)).FirstOrDefault();
-
-                if (user == null)
-                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(4));
-                else
-                    WebserviceHelper.WriteResponse(Context, true, user);
-            }
-            catch (Exception mes)
-            {
-                WebserviceHelper.WriteResponse(Context, false, mes.Message);
-            }
-        }
-
-        /***********************************************************/
-        // RESET PASSWORD - Reset a password for a user
-        /***********************************************************/
-        [WebMethod]
-        public void ResetPassword(int userId, string password)
-        {
-            try
-            {
-                string cmd = string.Format("UPDATE Users SET Password='{0}' WHERE UserId='{1}'", EncryptionHelper.Encrypt(password), userId.ToString());
-
-                if (DatabaseHelper.ExecuteCommand(cmd))
-                    WebserviceHelper.WriteResponse(Context, true, "");
-            }
-            catch (Exception mes)
-            {
-                WebserviceHelper.WriteResponse(Context, false, mes.Message);
-            }
-        }
-
-        #endregion
-
-        #region USER METHODS
-
-        /***********************************************************/
-        // GET USER - Get a specific user from their id
-        /***********************************************************/
-        [WebMethod]
-        public void GetUser(int userId)
-        {
-            try
-            {
-                if (userId < 1)
-                {
-                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(1));
-                    return;
-                }
-
-                string cmd = string.Format("SELECT * FROM Users WHERE UserId ='{0}'", userId.ToString());
 
                 User user = (User)DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(User)).FirstOrDefault();
 
@@ -169,16 +100,60 @@ namespace WebserviceTimeRegistration
         }
 
         /***********************************************************/
-        // UPDATE USER - Get a list of all the users in the database
+        // RESET PASSWORD - Reset a password for a user - Returns success[true; false]
+        /***********************************************************/
+        [WebMethod]
+        public void ResetPassword(int userId, string password)
+        {
+            try
+            {
+                string cmd = string.Format("UPDATE Users SET Password='{0}' WHERE UserId={1}", EncryptionHelper.Encrypt(password), userId.ToString());
+
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
+            }
+        }
+
+        #endregion
+
+        #region USER METHODS
+
+        /***********************************************************/
+        // GET USER - Get a specific user from their id - Returns success[true; false], User
+        /***********************************************************/
+        [WebMethod]
+        public void GetUser(int userId)
+        {
+            try
+            {
+                string cmd = string.Format("SELECT * FROM Users WHERE UserId ='{0}'", userId.ToString());
+
+                User user = (User)DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(User)).FirstOrDefault();
+
+                if (user != null)
+                    WebserviceHelper.WriteResponse(Context, true, user);
+                else
+                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(2));
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
+            }
+        }
+
+        /***********************************************************/
+        // UPDATE USER - Update user information - Returns success[true; false] 
         /***********************************************************/
         [WebMethod]
         public void UpdateUser(int userId, string firstName, string lastName, bool admin)
         {
             try
             {
-                string username = CreateUsername(firstName, lastName, userId);
-
-                string cmd = string.Format("UPDATE Users SET FirstName='{0}', LastName='{1}', Username='{2}', Admin='{3}' WHERE UserId={4}", firstName, lastName, username, admin, userId);
+                string cmd = string.Format("UPDATE Users SET FirstName='{0}', LastName='{1}', Admin='{2}' WHERE UserId={3}", firstName, lastName, admin, userId);
 
                 if (DatabaseHelper.ExecuteCommand(cmd))
                     WebserviceHelper.WriteResponse(Context, true, "");
@@ -190,7 +165,7 @@ namespace WebserviceTimeRegistration
         }
 
         /***********************************************************/
-        // GET USERS - Get a list of all the users in the database
+        // GET USERS - Get a list of all the users in the database - Returns success[true; false], List<User>
         /***********************************************************/
         [WebMethod]
         public void GetUsers()
@@ -224,7 +199,7 @@ namespace WebserviceTimeRegistration
             {
                 if (firstName == "" || lastName == "" || password == "")
                 {
-                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(2));
+                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(1));
                     return;
                 }
 
@@ -242,7 +217,7 @@ namespace WebserviceTimeRegistration
         }
 
         /***********************************************************/
-        // DELETE USER - Delete user with the users id
+        // DELETE USER - Delete user - Returns success[true; false] 
         /***********************************************************/
         [WebMethod]
         public void DeleteUser(int userId)
@@ -298,7 +273,7 @@ namespace WebserviceTimeRegistration
         }
 
         /***********************************************************/
-        // GET ORDER - Get a specific order associated with the user
+        // GET ORDER - Get a specific order associated with the user - Returns success[true; false], Order
         /***********************************************************/
         [WebMethod]
         public void GetOrder(int userId, int orderId)
@@ -315,7 +290,7 @@ namespace WebserviceTimeRegistration
                 if (order != null)
                     WebserviceHelper.WriteResponse(Context, true, order);
                 else
-                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(102));
+                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(101));
             }
             catch (Exception mes)
             {
@@ -324,7 +299,7 @@ namespace WebserviceTimeRegistration
         }
 
         /***********************************************************/
-        // CREATE ORDER - Create an order where user is given the role Creator
+        // CREATE ORDER - Create an order where user is given the role Creator - Returns success[true; false]
         /***********************************************************/
         [WebMethod]
         public void CreateOrder(int userId, string name, string description, int customerId)
@@ -348,7 +323,7 @@ namespace WebserviceTimeRegistration
         }
 
         /***********************************************************/
-        // DELETE ORDER - Delete order and all the OrderRoles associated with it
+        // DELETE ORDER - Delete order and all the OrderRoles associated with it - Returns success[true; false]
         /***********************************************************/
         [WebMethod]
         public void DeleteOrder(int orderId)
@@ -373,7 +348,7 @@ namespace WebserviceTimeRegistration
         #region ROLE METHODS
 
         /***********************************************************/
-        // GET ROLES - Get all roles
+        // GET ROLES - No parameters - Returns success[true; false], List<Roles>
         /***********************************************************/
         [WebMethod]
         public void GetRoles()
@@ -398,7 +373,7 @@ namespace WebserviceTimeRegistration
         }
 
         /***********************************************************/
-        // CREATE ROLE - Create a role with a name
+        // CREATE ROLE - Name of the role - Returns success[true; false]
         /***********************************************************/
         [WebMethod]
         public void CreateRole(string name)
@@ -417,7 +392,7 @@ namespace WebserviceTimeRegistration
         }
 
         /***********************************************************/
-        // DELETE ROLE - Deletes all OrderRoles associated with this roleId and then deletes the role
+        // DELETE ROLE - Deletes all OrderRoles associated with this roleId and then deletes the role - Returns success[true; false]
         /***********************************************************/
         [WebMethod]
         public void DeleteRole(int roleId)
@@ -445,7 +420,7 @@ namespace WebserviceTimeRegistration
         #region ORDER ROLES METHOD
 
         /***********************************************************/
-        // GET ORDER ROLES - Gets all Order roles associated with an order
+        // GET ORDER ROLES - Gets all Order roles associated with an order - Returns success[true; false], List<Order>
         /***********************************************************/
         [WebMethod]
         public void GetOrderRoles(int orderId)
@@ -472,7 +447,7 @@ namespace WebserviceTimeRegistration
         }
 
         /***********************************************************/
-        // CREATE ORDER ROLE - OrderId, UserId, RoleId
+        // CREATE ORDER ROLE - Create a relation between a user and an order - Returns success[true; false]
         /***********************************************************/
         [WebMethod]
         public void CreateOrderRole(int orderId, int userId, int roleId)
@@ -491,7 +466,7 @@ namespace WebserviceTimeRegistration
         }
 
         /***********************************************************/
-        // UPDATE ORDER ROLE - OrderId, UserId, RoleId
+        // UPDATE ORDER ROLE - Update information in relation - Returns success[true; false]
         /***********************************************************/
         [WebMethod]
         public void UpdateOrderRole(int orderId, int userId, int roleId)
@@ -510,7 +485,7 @@ namespace WebserviceTimeRegistration
         }
 
         /***********************************************************/
-        // DELETE ORDER ROLE - OrderId, UserId, RoleId
+        // DELETE ORDER ROLE - Delete relation between order and user - Returns success[true; false]
         /***********************************************************/
         [WebMethod]
         public void DeleteOrderRole(int orderRoleId)
@@ -533,7 +508,7 @@ namespace WebserviceTimeRegistration
         #region CUSTOMER METHODS
 
         /***********************************************************/
-        // GET CUSTOMERS - Get customers 
+        // GET CUSTOMERS - Get customers - Returns success[true; false], List<Customer>
         /***********************************************************/
         [WebMethod]
         public void GetCustomers()
@@ -558,7 +533,7 @@ namespace WebserviceTimeRegistration
         }
 
         /***********************************************************/
-        // CREATE CUSTOMER - Name of the customer
+        // CREATE CUSTOMER - Name of the customer - Returns success[true; false]
         /***********************************************************/
         [WebMethod]
         public void CreateCustomer(string name)
@@ -577,7 +552,7 @@ namespace WebserviceTimeRegistration
         }
 
         /***********************************************************/
-        // DELETE CUSTOMER - Delete
+        // DELETE CUSTOMER - ID of the customer - Returns success[true; false]
         /***********************************************************/
         [WebMethod]
         public void DeleteCustomer(int customerId)
@@ -600,7 +575,7 @@ namespace WebserviceTimeRegistration
         #region TIME REGISTRATION METHODS
 
         /***********************************************************/
-        // GET TIME REGISTRATIONS - UserId
+        // GET TIME REGISTRATIONS - Get user's time registrations - Returns success[true; false], List<TimeRegistration>
         /***********************************************************/
         [WebMethod]
         public void GetTimeRegistrations(int userId)
@@ -619,6 +594,92 @@ namespace WebserviceTimeRegistration
                     list.Add(obj);
 
                 WebserviceHelper.WriteResponse(Context, true, list);
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
+            }
+        }
+
+        /***********************************************************/
+        // START TIME REGISTRATION - Start a time registration - Returns success[true; false]
+        /***********************************************************/
+        [WebMethod]
+        public void StartTimeRegistration(DateTime startTime, int orderId, int userId)
+        {
+            try
+            {
+                SqlCommand cmd = new SqlCommand("StartTimeRegistration");
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@StartTime", SqlDbType.DateTime).Value = startTime;
+                cmd.Parameters.Add("@OrderId", SqlDbType.Int).Value = orderId;
+                cmd.Parameters.Add("@UserId", SqlDbType.Int).Value = userId;
+
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
+            }
+        }
+
+        /***********************************************************/
+        // END TIME REGISTRATION - Ends time registration - Returns success[true; false]
+        /***********************************************************/
+        [WebMethod]
+        public void EndTimeRegistration(int timeRegId, DateTime endTime)
+        {
+            try
+            {
+                SqlCommand cmd = new SqlCommand("EndTimeRegistration");
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@EndTime", SqlDbType.DateTime).Value = endTime;
+                cmd.Parameters.Add("@TimeRegId", SqlDbType.Int).Value = timeRegId;                
+
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
+            }
+        }
+
+        /***********************************************************/
+        // SET NOTE FOR TIME REGISTRATION - Set a note for a timeregistration - Returns success[true; false]
+        /***********************************************************/
+        [WebMethod]
+        public void SetNoteForTimeRegistration(int timeRegId, string note)
+        {
+            try
+            {
+                SqlCommand cmd = new SqlCommand("SetNoteForTimeRegistration");
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@TimeRegId", SqlDbType.Int).Value = timeRegId;
+                cmd.Parameters.Add("@Note", SqlDbType.NVarChar).Value = note;                
+
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
+            }
+        }
+
+        /***********************************************************/
+        // DELETE TIME REGISTRATION - Deletes time registration - Returns success[true; false]
+        /***********************************************************/
+        [WebMethod]
+        public void DeleteTimeRegistration(int timeRegId)
+        {
+            try
+            {
+                string cmd = string.Format("DELETE FROM TimeRegistrations WHERE TimeRegId={0}", timeRegId);
+
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
             }
             catch (Exception mes)
             {

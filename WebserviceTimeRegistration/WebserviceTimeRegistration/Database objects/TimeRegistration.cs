@@ -8,8 +8,8 @@ namespace WebserviceTimeRegistration.Database_objects
     public class TimeRegistration
     {
         private int timeRegId;
-        private DateTime startTime;
-        private DateTime endTime;
+        private string startTime;
+        private string endTime;
         private TimeSpan total;
         private int orderId;
         private int userId;
@@ -21,7 +21,7 @@ namespace WebserviceTimeRegistration.Database_objects
             
         }
 
-        public TimeRegistration(int timeRegId, DateTime startTime, DateTime endTime, TimeSpan total, int orderId, int userId, string description, string note)
+        public TimeRegistration(int timeRegId, string startTime, string endTime, TimeSpan total, int orderId, int userId, string description, string note)
         {
             this.timeRegId = timeRegId;
             this.startTime = startTime;
@@ -46,7 +46,7 @@ namespace WebserviceTimeRegistration.Database_objects
             }
         }
 
-        public DateTime StartTime
+        public string StartTime
         {
             get
             {
@@ -59,7 +59,7 @@ namespace WebserviceTimeRegistration.Database_objects
             }
         }
 
-        public DateTime EndTime
+        public string EndTime
         {
             get
             {
@@ -70,11 +70,11 @@ namespace WebserviceTimeRegistration.Database_objects
             {
                 endTime = value;
 
-                if (StartTime != null)
+                if (EndTime != "")
                 {
                     TimeSpan timeSpan = new TimeSpan();
 
-                    timeSpan = (endTime - startTime);
+                    timeSpan = (DateTime.Parse(endTime) - DateTime.Parse(startTime));
 
                     total = timeSpan;
                 }

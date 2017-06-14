@@ -10,15 +10,8 @@ namespace WebserviceTimeRegistration.Database_objects
         private int userId;
         private string firstName;
         private string lastName;
+        private string username;
         private bool admin;
-
-        public User(int userId, string firstName, string lastName, bool admin)
-        {
-            this.userId = userId;
-            this.firstName = firstName;
-            this.lastName = lastName;
-            this.Admin = admin;
-        }
 
         public User()
         {
@@ -61,6 +54,19 @@ namespace WebserviceTimeRegistration.Database_objects
             set
             {
                 lastName = value;
+            }
+        }
+
+        public string Username
+        {
+            get
+            {
+                return username;
+            }
+
+            set
+            {
+                username = value;
             }
         }
 

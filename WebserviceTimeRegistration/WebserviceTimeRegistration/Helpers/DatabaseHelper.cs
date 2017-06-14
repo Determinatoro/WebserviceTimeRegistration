@@ -28,6 +28,9 @@ namespace WebserviceTimeRegistration.Helpers
                 if (value is DBNull)
                     value = value.ToString();
 
+                if (value is DateTime)
+                    value = ((DateTime)value).ToString("dd-MM-yyyy HH:mm");
+
                 prop.SetValue(obj, value, null);
             }
             return obj;
