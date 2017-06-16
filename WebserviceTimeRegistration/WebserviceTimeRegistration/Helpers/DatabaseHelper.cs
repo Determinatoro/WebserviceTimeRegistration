@@ -133,6 +133,16 @@ namespace WebserviceTimeRegistration.Helpers
                         while (reader.Read())
                         {
                             var data = GetObjectData(reader);
+
+                            if (type == typeof(List<object>))
+                            {
+                                List<object> list = new List<object>();
+
+                                foreach (KeyValuePair<string, object> item in data)
+                                    list.Add(item.Value);
+
+                                return list;
+                            }
                             objectList.Add(GetObject(data, type));
                         }
                     }

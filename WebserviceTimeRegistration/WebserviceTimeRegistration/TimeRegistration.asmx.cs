@@ -48,7 +48,13 @@ namespace WebserviceTimeRegistration
                     errorMessage = "Firstname or lastname is too short";
                     break;                
                 case 101:
-                    errorMessage = "No order with that order ID";
+                    errorMessage = "No order with that order ID or you are not associated with the order";
+                    break;
+                case 201:
+                    errorMessage = "Order relation already exists";
+                    break;
+                case 202:
+                    errorMessage = "There has to be at least one leader role associated with an order";
                     break;
             }
 
@@ -258,13 +264,42 @@ namespace WebserviceTimeRegistration
                 cmd.Parameters.Add("@UserId", SqlDbType.Int).Value = userId;
 
                 List<Order> ordersList = new List<Order>();
-
                 var objectList = DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(Order));
 
                 foreach (Order obj in objectList)
                     ordersList.Add(obj);
 
-                WebserviceHelper.WriteResponse(Context, true, ordersList);
+                List<OrderWithRoles> orderWithRolesList = new List<OrderWithRoles>();
+                objectList = DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(OrderWithRoles));
+
+                foreach (OrderWithRoles obj in objectList)
+                    orderWithRolesList.Add(obj);
+
+                var list = orderWithRolesList.Select(x => x.OrderId).Distinct().ToList();
+
+                List<OrderWithRoles> temp = new List<OrderWithRoles>();
+
+                foreach (int item in list)
+                {
+                    var obj = orderWithRolesList.Where(x => x.OrderId == item).FirstOrDefault();
+
+                    var roles = ordersList.Where(x => x.OrderId == item).Select(x => x.RoleName);
+
+                    var rolesList = new List<Role>();
+
+                    foreach (string roleName in roles)
+                    {
+                        string command = string.Format("SELECT * FROM Roles WHERE Name='{0}'", roleName);
+                        Role role = (Role)DatabaseHelper.GetObjectsFromSQLReader(command, typeof(Role)).FirstOrDefault();
+                        rolesList.Add(role);
+                    }
+
+                    obj.RolesList = rolesList;
+
+                    temp.Add(obj);
+                }                
+
+                WebserviceHelper.WriteResponse(Context, true, temp);
             }
             catch (Exception mes)
             {
@@ -285,12 +320,29 @@ namespace WebserviceTimeRegistration
                 cmd.Parameters.Add("@UserId", SqlDbType.Int).Value = userId;
                 cmd.Parameters.Add("@OrderId", SqlDbType.Int).Value = orderId;
 
-                Order order = (Order)DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(Order)).FirstOrDefault();
+                var orderWithRoles = (OrderWithRoles)DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(OrderWithRoles)).FirstOrDefault();
 
-                if (order != null)
-                    WebserviceHelper.WriteResponse(Context, true, order);
-                else
-                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(101));
+                List<Order> ordersList = new List<Order>();
+
+                var objectList = DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(Order));
+
+                foreach (Order obj in objectList)
+                    ordersList.Add(obj);
+
+                var roles = ordersList.Select(x => x.RoleName);
+
+                var rolesList = new List<Role>();
+
+                foreach (string roleName in roles)
+                {
+                    string command = string.Format("SELECT * FROM Roles WHERE Name='{0}'", roleName);
+                    Role role = (Role)DatabaseHelper.GetObjectsFromSQLReader(command, typeof(Role)).FirstOrDefault();
+                    rolesList.Add(role);
+                }
+
+                orderWithRoles.RolesList = rolesList;
+
+                WebserviceHelper.WriteResponse(Context, true, orderWithRoles);
             }
             catch (Exception mes)
             {
@@ -454,7 +506,17 @@ namespace WebserviceTimeRegistration
         {
             try
             {
-                string cmd = string.Format("INSERT INTO OrderRoles (OrderId, UserId, RoleId) VALUES ({0}, {1}, {2})", orderId, userId, roleId);
+                string cmd = string.Format("SELECT * FROM OrderRoles WHERE RoleId={2} AND OrderId={0} AND UserId={1}", orderId, userId, roleId);
+
+                var orderRole = (OrderRole)DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(OrderRole)).FirstOrDefault();
+
+                if (orderRole != null)
+                {
+                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(201));
+                    return;
+                }
+
+                cmd = string.Format("INSERT INTO OrderRoles (OrderId, UserId, RoleId) VALUES ({0}, {1}, {2})", orderId, userId, roleId);
 
                 if (DatabaseHelper.ExecuteCommand(cmd))
                     WebserviceHelper.WriteResponse(Context, true, "");
@@ -469,13 +531,37 @@ namespace WebserviceTimeRegistration
         // UPDATE ORDER ROLE - Update information in relation - Returns success[true; false]
         /***********************************************************/
         [WebMethod]
-        public void UpdateOrderRole(int orderId, int userId, int roleId)
+        public void UpdateOrderRole(int orderRoleId, int orderId, int userId, int roleId)
         {
             try
             {
-                string cmd = string.Format("UPDATE OrderRoles SET RoleId={2} WHERE OrderId={0} AND UserId={1}", orderId, userId, roleId);
+                SqlCommand cmd = new SqlCommand("CheckLeaderOnUpdateOrder");
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@OrderRoleId", SqlDbType.Int).Value = orderRoleId;
+                cmd.Parameters.Add("@OrderId", SqlDbType.Int).Value = orderId;
+                cmd.Parameters.Add("@RoleId", SqlDbType.Int).Value = roleId;
 
-                if (DatabaseHelper.ExecuteCommand(cmd))
+                var mayUpdate = (bool)DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(List<object>)).FirstOrDefault();
+
+                if (!mayUpdate)
+                {
+                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(202));
+                    return;
+                }
+
+                string command = string.Format("SELECT * FROM OrderRoles WHERE RoleId={2} AND OrderId={0} AND UserId={1}", orderId, userId, roleId);
+
+                var orderRole = (OrderRole)DatabaseHelper.GetObjectsFromSQLReader(command, typeof(OrderRole)).FirstOrDefault();
+
+                if (orderRole != null)
+                {
+                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(201));
+                    return;
+                }
+
+                command = string.Format("UPDATE OrderRoles SET RoleId={1} WHERE OrderRoleId={0}", orderRoleId, roleId);
+
+                if (DatabaseHelper.ExecuteCommand(command))
                     WebserviceHelper.WriteResponse(Context, true, "");
             }
             catch (Exception mes)
@@ -488,13 +574,26 @@ namespace WebserviceTimeRegistration
         // DELETE ORDER ROLE - Delete relation between order and user - Returns success[true; false]
         /***********************************************************/
         [WebMethod]
-        public void DeleteOrderRole(int orderRoleId)
+        public void DeleteOrderRole(int orderRoleId, int orderId)
         {
             try
             {
-                string cmd = string.Format("DELETE FROM OrderRoles WHERE OrderRoleId={0}", orderRoleId);
+                SqlCommand cmd = new SqlCommand("CheckLeaderOnOrder");
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@OrderRoleId", SqlDbType.Int).Value = orderRoleId;
+                cmd.Parameters.Add("@OrderId", SqlDbType.Int).Value = orderId;
 
-                if (DatabaseHelper.ExecuteCommand(cmd))
+                var mayDelete = (bool)DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(List<object>)).FirstOrDefault();
+
+                if (!mayDelete)
+                {
+                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(202));
+                    return;
+                }
+
+                string command = string.Format("DELETE FROM OrderRoles WHERE OrderRoleId={0}", orderRoleId);
+
+                if (DatabaseHelper.ExecuteCommand(command))
                     WebserviceHelper.WriteResponse(Context, true, "");
             }
             catch (Exception mes)
@@ -669,6 +768,29 @@ namespace WebserviceTimeRegistration
         }
 
         /***********************************************************/
+        // UPDATE TIME REGISTRATION - Updates time registration - Returns success[true; false]
+        /***********************************************************/
+        [WebMethod]
+        public void UpdateTimeRegistration(int timeRegId, DateTime startTime, DateTime endTime)
+        {
+            try
+            {
+                SqlCommand cmd = new SqlCommand("UpdateTimeRegistration");
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@TimeRegId", SqlDbType.Int).Value = timeRegId;
+                cmd.Parameters.Add("@StartTime", SqlDbType.DateTime).Value = startTime;
+                cmd.Parameters.Add("@EndTime", SqlDbType.DateTime).Value = endTime;
+
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
+            }
+        }
+
+        /***********************************************************/
         // DELETE TIME REGISTRATION - Deletes time registration - Returns success[true; false]
         /***********************************************************/
         [WebMethod]
@@ -680,6 +802,46 @@ namespace WebserviceTimeRegistration
 
                 if (DatabaseHelper.ExecuteCommand(cmd))
                     WebserviceHelper.WriteResponse(Context, true, "");
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
+            }
+        }
+
+        /***********************************************************/
+        // CREATE TIME REGISTRATION - Create a time registration - Returns success[true; false]
+        /***********************************************************/
+        [WebMethod]
+        public void CreateTimeRegistration(DateTime startTime, DateTime endTime, int orderId, int userId)
+        {
+            try
+            {
+                SqlCommand cmd = new SqlCommand("CreateTimeRegistration");
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@StartTime", SqlDbType.DateTime).Value = startTime;
+                cmd.Parameters.Add("@EndTime", SqlDbType.DateTime).Value = endTime;
+                cmd.Parameters.Add("@OrderId", SqlDbType.Int).Value = orderId;
+                cmd.Parameters.Add("@UserId", SqlDbType.Int).Value = userId;
+
+                if (DatabaseHelper.ExecuteCommand(cmd))
+                    WebserviceHelper.WriteResponse(Context, true, "");
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
+            }
+        }
+
+        /***********************************************************/
+        // GET TIMEREGISTRATIONS PER ORDER - Get timeregistrations per order - Returns success[true; false]
+        /***********************************************************/
+        [WebMethod]
+        public void GetTimeRegistrationsPerOrder(DateTime startTime, DateTime endTime, int orderId, int userId)
+        {
+            try
+            {
+
             }
             catch (Exception mes)
             {

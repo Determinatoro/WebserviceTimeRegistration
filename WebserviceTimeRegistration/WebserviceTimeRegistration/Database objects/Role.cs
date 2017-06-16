@@ -9,6 +9,7 @@ namespace WebserviceTimeRegistration.Database_objects
     {
         private int roleId;
         private string name;
+        private bool leader;
 
         public Role(int roleId, string name)
         {
@@ -44,6 +45,19 @@ namespace WebserviceTimeRegistration.Database_objects
             set
             {
                 name = value;
+            }
+        }
+
+        public bool Leader
+        {
+            get
+            {
+                return leader;
+            }
+
+            set
+            {
+                leader = value;
             }
         }
     }

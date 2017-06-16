@@ -86,6 +86,7 @@
     <Compile Include="Database objects\Customer.cs" />
     <Compile Include="Database objects\Order.cs" />
     <Compile Include="Database objects\OrderRole.cs" />
+    <Compile Include="Database objects\OrderWithRoles.cs" />
     <Compile Include="Database objects\Role.cs" />
     <Compile Include="Database objects\TimeRegistration.cs" />
     <Compile Include="Database objects\User.cs" />
