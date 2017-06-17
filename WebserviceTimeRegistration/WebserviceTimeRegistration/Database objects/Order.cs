@@ -13,15 +13,6 @@ namespace WebserviceTimeRegistration.Database_objects
         private string customerName;
         private string roleName;
 
-        public Order(int orderId, string orderName, string description, string customerName, string roleName)
-        {
-            this.orderId = orderId;
-            this.orderName = orderName;
-            this.description = description;
-            this.customerName = customerName;
-            this.roleName = roleName;
-        }
-
         public Order()
         {
 
