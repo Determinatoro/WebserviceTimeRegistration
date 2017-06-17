@@ -49,7 +49,7 @@ namespace WebserviceTimeRegistration
                     break;                
                 case 101:
                     errorMessage = "No order with that order ID or you are not associated with the order";
-                    break;
+                    break;                
                 case 201:
                     errorMessage = "Order relation already exists";
                     break;
@@ -321,6 +321,12 @@ namespace WebserviceTimeRegistration
                 cmd.Parameters.Add("@OrderId", SqlDbType.Int).Value = orderId;
 
                 var orderWithRoles = (OrderWithRoles)DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(OrderWithRoles)).FirstOrDefault();
+
+                if (orderWithRoles == null)
+                {
+                    WebserviceHelper.WriteResponse(Context, false, GetErrorMessage(101));
+                    return;
+                }
 
                 List<Order> ordersList = new List<Order>();
 
