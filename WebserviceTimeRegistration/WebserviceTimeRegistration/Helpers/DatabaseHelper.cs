@@ -12,6 +12,9 @@ namespace WebserviceTimeRegistration.Helpers
     {
         #region MSSQL
 
+        /***********************************************************/
+        // Take a dictionary and create an object of the specified type
+        /***********************************************************/
         public static Object GetObject(this Dictionary<string, object> dict, Type type)
         {
             var obj = Activator.CreateInstance(type);
@@ -36,6 +39,9 @@ namespace WebserviceTimeRegistration.Helpers
             return obj;
         }
 
+        /***********************************************************/
+        // Read data from sqlreader and put it into a dictionary
+        /***********************************************************/
         public static Dictionary<string, object> GetObjectData(SqlDataReader reader)
         {
             var columns = Enumerable.Range(0, reader.FieldCount).Select(reader.GetName).ToList();
@@ -48,6 +54,9 @@ namespace WebserviceTimeRegistration.Helpers
             return dataList;
         }
 
+        /***********************************************************/
+        // Takes a dictionary and creates an object of the specified type
+        /***********************************************************/
         public static List<object> GetObjectDataList(SqlDataReader reader)
         {
             var columns = Enumerable.Range(0, reader.FieldCount).Select(reader.GetName).ToList();
@@ -60,12 +69,18 @@ namespace WebserviceTimeRegistration.Helpers
             return dataList;
         }
 
+        /***********************************************************/
+        // Return the sqlconnection object
+        /***********************************************************/
         public static SqlConnection GetDatabaseConnection()
         {
             string conString = ConfigurationManager.ConnectionStrings["DbConnection"].ToString();
             return new SqlConnection(conString);
         }
 
+        /***********************************************************/
+        // Return a list of objects from sql call with specified type
+        /***********************************************************/
         public static List<object> GetObjectsFromSQLReader(string cmd, Type type)
         {
             SqlConnection con = GetDatabaseConnection();
@@ -91,6 +106,9 @@ namespace WebserviceTimeRegistration.Helpers
             return objectList;
         }
 
+        /***********************************************************/
+        // Return a list of objects from sql call
+        /***********************************************************/
         public static List<object> GetObjectsFromSQLReader(string cmd)
         {
             SqlConnection con = GetDatabaseConnection();
@@ -116,6 +134,9 @@ namespace WebserviceTimeRegistration.Helpers
             return objectList;
         }
 
+        /***********************************************************/
+        // Return a list of objects from sql stored procedure with specified type 
+        /***********************************************************/
         public static List<object> GetObjectsFromSQLReader(SqlCommand sqlCommand, Type type)
         {
             SqlConnection con = GetDatabaseConnection();
@@ -152,6 +173,9 @@ namespace WebserviceTimeRegistration.Helpers
             return objectList;
         }
 
+        /***********************************************************/
+        // Execute command
+        /***********************************************************/
         public static bool ExecuteCommand(string cmd)
         {
             SqlConnection con = GetDatabaseConnection();
@@ -166,6 +190,9 @@ namespace WebserviceTimeRegistration.Helpers
             return true;
         }
 
+        /***********************************************************/
+        // Execute command stored procedures
+        /***********************************************************/
         public static bool ExecuteCommand(SqlCommand cmd)
         {
             SqlConnection con = GetDatabaseConnection();
@@ -179,22 +206,6 @@ namespace WebserviceTimeRegistration.Helpers
             }
 
             return true;
-        }
-
-        #endregion
-
-        #region MySQL
-
-        public static List<string> GetObjectData(MySqlDataReader reader)
-        {
-            var columns = Enumerable.Range(0, reader.FieldCount).Select(reader.GetName).ToList();
-
-            List<string> dataList = new List<string>();
-
-            foreach (var item in columns)
-                dataList.Add(reader[item].ToString());
-
-            return dataList;
         }
 
         #endregion

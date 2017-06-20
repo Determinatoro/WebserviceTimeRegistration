@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
+using System.Globalization;
 using System.Linq;
 using System.Web;
 using System.Web.Script.Serialization;
@@ -250,6 +251,31 @@ namespace WebserviceTimeRegistration
         #endregion
 
         #region ORDER METHODS
+
+        /***********************************************************/
+        // GET ORDERS ADMIN - Get a list of all the orders
+        /***********************************************************/
+        [WebMethod]
+        public void GetOrdersAdmin()
+        {
+            try
+            {
+                string cmd = "SELECT Name as OrderName, Description, OrderId FROM Orders";
+
+                List<Order> list = new List<Order>();
+
+                var objectList = DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(Order));
+
+                foreach (Order obj in objectList)
+                    list.Add(obj);
+
+                WebserviceHelper.WriteResponse(Context, true, list);
+            }
+            catch (Exception mes)
+            {
+                WebserviceHelper.WriteResponse(Context, false, mes.Message);
+            }
+        }
 
         /***********************************************************/
         // GET ORDERS - Get a list of all the orders associated with the user
@@ -840,14 +866,55 @@ namespace WebserviceTimeRegistration
         }
 
         /***********************************************************/
-        // GET TIMEREGISTRATIONS PER ORDER - Get timeregistrations per order - Returns success[true; false]
+        // GET TIME REGISTRATED PER USER ON ORDER - Get timeregistrations per user on order - Returns success[true; false], List<TimeRegistrated>
         /***********************************************************/
         [WebMethod]
-        public void GetTimeRegistrationsPerOrder(DateTime startTime, DateTime endTime, int orderId, int userId)
+        public void GetTimeRegistratedPerUserOnOrder(int orderId)
         {
             try
             {
+                SqlCommand cmd = new SqlCommand("GetTimeRegistrationsPerOrder");
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@OrderId", SqlDbType.Int).Value = orderId;
 
+                List<Database_objects.TimeRegistration> list = new List<Database_objects.TimeRegistration>();
+
+                var objectList = DatabaseHelper.GetObjectsFromSQLReader(cmd, typeof(Database_objects.TimeRegistration));
+
+                foreach (Database_objects.TimeRegistration obj in objectList)
+                    list.Add(obj);
+
+                var userIds = list.Select(x => x.UserId).Distinct().ToList();
+
+                List<TimeRegistrated> timeRegistratedList = new List<TimeRegistrated>();
+
+                foreach (int obj in userIds)
+                {
+                    TimeRegistrated tr = new TimeRegistrated();
+                    tr.UserId = obj;
+
+                    string command = string.Format("SELECT * FROM Users WHERE UserId ={0}", obj.ToString());
+
+                    User user = (User)DatabaseHelper.GetObjectsFromSQLReader(command, typeof(User)).FirstOrDefault();
+
+                    tr.FirstName = user.FirstName;
+                    tr.LastName = user.LastName;
+
+                    var timeRegs = list.Where(x => x.UserId == obj).ToList();
+
+                    TimeSpan temp = new TimeSpan();
+
+                    foreach (var item in timeRegs)
+                    {
+                        TimeSpan total = TimeSpan.ParseExact(item.Total, "d'd 'h'h 'm'm'", CultureInfo.CurrentCulture);
+                        temp += total;
+                    }
+
+                    tr.Total = temp.ToString("d'd 'h'h 'm'm'");
+                    timeRegistratedList.Add(tr);
+                }
+
+                WebserviceHelper.WriteResponse(Context, true, timeRegistratedList);
             }
             catch (Exception mes)
             {
